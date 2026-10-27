@@ -1,0 +1,10 @@
+*.exe
+*.test
+*.out
+vendor/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
