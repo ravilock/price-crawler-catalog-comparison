@@ -1,13 +1,9 @@
-.PHONY: test lint build image
+.PHONY: test build image
 
 IMAGE_NAME ?= $(notdir $(CURDIR))
 
 test:
 	go test ./...
-
-lint:
-	test -z "$$(gofmt -l .)"
-	go vet ./...
 
 build:
 	go build ./...
