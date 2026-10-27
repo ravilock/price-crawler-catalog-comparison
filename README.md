@@ -131,6 +131,21 @@ automatic rollback or forced version is permitted.
 
 ## Delivery status
 
+## Owned migrations — T075
+
+The catalog image packages its versioned SQL and the pinned
+`migrate/migrate:v4.18.3` PostgreSQL CLI. `make migrate.up` applies pending schema changes;
+`make migrate.version` reports the version. The app profile waits for the health-gated,
+one-off migration job to succeed. A failed or dirty migration prevents the app from
+starting. Neither command rolls back or forces a version.
+
+Existing databases created from the former `001_message_delivery.sql` are adopted by
+reapplying its idempotent table/index definitions, which preserves outbox and inbox rows
+while recording migration version 1. Back up the volume and compare the existing tables
+and index with `migrations/001_message_delivery.up.sql` before adoption. If the schema
+differs, repair it manually first; do not drop data or force the migration version.
+Down migrations are only for explicitly planned destructive rollback.
+
 Infrastructure readiness is gated by authenticated PostgreSQL `SELECT 1`, RabbitMQ health,
 and Keycloak realm discovery with the expected issuer where selected. Application
 connection handling, migration gating and dependency-loss readiness are delivered by
@@ -138,6 +153,11 @@ T073–T076/T085–T086/T105–T109. Current baseline worker images may exit unt
 wiring is implemented. This guide does not claim those future acceptance checks passed.
 
 ## Verification — 2026-10-27
+
+`make test build` and Compose resolution passed after adding T075. Fresh migration reached
+version 1. A retained-schema adoption check seeded one outbox and one inbox row, removed
+only migration metadata, reapplied migration 1, and confirmed both rows remained with a
+clean version 1. The isolated test project and volume were removed afterward.
 
 `make test lint build`, Compose resolution and the dependency-image inventory check
 passed. The current test target contains no service behavior tests yet. Minimum

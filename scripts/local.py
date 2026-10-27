@@ -64,6 +64,10 @@ def main():
         execute(command + ['pull', '--ignore-buildable'])
         execute(command + ['up', '-d', '--pull', 'never'] + (['--build'] if action == 'app.up' else []))
         return
+    if action in ('migrate.up', 'migrate.version'):
+        migration_action = action.split('.')[1]
+        execute(COMPOSE + ['--profile', 'admin', 'run', '--build', '--rm', '-T', 'migrate', migration_action])
+        return
     environment = os.environ.copy()
     environment.update({key: str(value) for key, value in model['services']['app']['environment'].items() if value is not None})
     if action == 'run':
