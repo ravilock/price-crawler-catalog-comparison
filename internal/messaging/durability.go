@@ -18,7 +18,7 @@ type OutboxMessage struct {
 	Attempts                                                           int
 }
 
-func ClaimOutbox(ctx context.Context, tx *sql.Tx, limit int) ([]OutboxMessage, error) {
+func ClaimOutbox(ctx context.Context, tx *sql.Tx, limit int) (messages []OutboxMessage, resultErr error) {
 	if tx == nil || limit < 1 || limit > 100 {
 		return nil, errors.New("transaction and batch size from 1 to 100 are required")
 	}
@@ -26,8 +26,12 @@ func ClaimOutbox(ctx context.Context, tx *sql.Tx, limit int) ([]OutboxMessage, e
 	if err != nil {
 		return nil, fmt.Errorf("claim outbox batch: %w", err)
 	}
-	defer rows.Close()
-	messages := make([]OutboxMessage, 0, limit)
+	defer func() {
+		if closeErr := rows.Close(); resultErr == nil && closeErr != nil {
+			resultErr = fmt.Errorf("close claimed outbox rows: %w", closeErr)
+		}
+	}()
+	messages = make([]OutboxMessage, 0, limit)
 	for rows.Next() {
 		var m OutboxMessage
 		if err = rows.Scan(&m.MessageID, &m.Destination, &m.MessageType, &m.OrganizationID, &m.CorrelationID, &m.Payload, &m.Attempts); err != nil {
