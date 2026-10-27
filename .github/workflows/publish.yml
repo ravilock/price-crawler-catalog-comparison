@@ -1,0 +1,53 @@
+name: Publish container image
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version-file: go.mod
+      - run: make test
+      - run: make lint
+      - run: make build
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Build and publish GHCR image
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.event.repository.name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          image="ghcr.io/${GHCR_OWNER,,}/${REPOSITORY}"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker build --pull -t "$image:$COMMIT_SHA" .
+          docker push "$image:$COMMIT_SHA"
+          if [ "$REF_TYPE" = branch ] && [ "$REF_NAME" = main ]; then
+            docker tag "$image:$COMMIT_SHA" "$image:latest"
+            docker push "$image:latest"
+          elif [ "$REF_TYPE" = tag ]; then
+            docker tag "$image:$COMMIT_SHA" "$image:$REF_NAME"
+            docker push "$image:$REF_NAME"
+          fi

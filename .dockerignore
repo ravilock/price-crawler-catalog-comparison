@@ -1,0 +1,9 @@
+.git
+.github
+.dockerignore
+coverage/
+dist/
+*.log
+.env
+.env.*
+!.env.example
