@@ -1,0 +1,145 @@
+name: ${COMPOSE_PROJECT_NAME:-price-catalog-comparison-local}
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-price}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?Set local RabbitMQ password}
+    ports:
+    - 127.0.0.1:${RABBITMQ_PORT:-19672}:5672
+    - 127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-19673}:15672
+    volumes:
+    - rabbit-data:/var/lib/rabbitmq
+    healthcheck:
+      test:
+      - CMD
+      - rabbitmq-diagnostics
+      - -q
+      - ping
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.4
+    command:
+    - start-dev
+    - --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-local-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Set local Keycloak password}
+      KC_HOSTNAME: ${OIDC_BASE_URL:-http://localhost:19681}
+    ports:
+    - 127.0.0.1:${KEYCLOAK_PORT:-19681}:8080
+    volumes:
+    - keycloak-data:/opt/keycloak/data
+    - ./local/keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test:
+      - CMD
+      - bash
+      - -ec
+      - 'exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /realms/price-intelligence/.well-known/openid-configuration HTTP/1.0\r\nHost:
+        localhost\r\nConnection: close\r\n\r\n" >&3; response=; while IFS= read -r -t 4 line || [[ -n "$$line" ]]; do response+="$$line";
+        done <&3; [[ "$$response" == *"\"issuer\":\"$$KC_HOSTNAME/realms/price-intelligence\""* ]]'
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+    profiles:
+    - browser
+  crawler-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: crawler
+      POSTGRES_USER: crawler
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set local PostgreSQL password}
+    ports:
+    - 127.0.0.1:${CRAWLER_POSTGRES_PORT:-19633}:5432
+    volumes:
+    - crawler-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - PGPASSWORD="$${POSTGRES_PASSWORD}" psql -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" -Atqc "SELECT 1"
+        | grep -qx 1
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+    profiles: &id001
+    - collection
+  crawler:
+    image: ghcr.io/${GHCR_OWNER:?Set GHCR_OWNER}/price-crawler-crawler:${CRAWLER_IMAGE_TAG-31c8ff5c57be3921c41b9d7662b498623199861c}
+    environment:
+      HTTP_ADDR: :8081
+      RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-price}:${RABBITMQ_DEFAULT_PASS:?Set local RabbitMQ password}@rabbitmq:5672/
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+      READINESS_TIMEOUT_SECONDS: ${READINESS_TIMEOUT_SECONDS:-120}
+      DATABASE_URL: postgres://crawler:${POSTGRES_PASSWORD:?Set local PostgreSQL password}@crawler-db:5432/crawler?sslmode=disable
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      crawler-db:
+        condition: service_healthy
+    profiles: *id001
+  user-api:
+    image: ghcr.io/${GHCR_OWNER:?Set GHCR_OWNER}/price-crawler-user-api:${USER_API_IMAGE_TAG-06b665889d7087c14eca709497edb57c046f3a26}
+    environment:
+      HTTP_ADDR: :8080
+      RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-price}:${RABBITMQ_DEFAULT_PASS:?Set local RabbitMQ password}@rabbitmq:5672/
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+      READINESS_TIMEOUT_SECONDS: ${READINESS_TIMEOUT_SECONDS:-120}
+      OIDC_ISSUER: ${OIDC_BASE_URL:-http://localhost:19681}/realms/price-intelligence
+      OIDC_JWKS_URL: http://keycloak:8080/realms/price-intelligence/protocol/openid-connect/certs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    ports:
+    - 127.0.0.1:${USER_API_PORT:-19682}:8080
+    profiles:
+    - browser
+  catalog-comparison-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: catalog
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set local PostgreSQL password}
+    ports:
+    - 127.0.0.1:${POSTGRES_PORT:-19632}:5432
+    volumes:
+    - catalog-comparison-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - PGPASSWORD="$${POSTGRES_PASSWORD}" psql -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}" -Atqc "SELECT 1"
+        | grep -qx 1
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+  app:
+    build:
+      context: .
+    environment:
+      HTTP_ADDR: ${HTTP_ADDR-:8080}
+      RABBITMQ_URL: ${RABBITMQ_URL-amqp://${RABBITMQ_DEFAULT_USER:-price}:${RABBITMQ_DEFAULT_PASS:?Set local RabbitMQ password}@rabbitmq:5672/}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+      READINESS_TIMEOUT_SECONDS: ${READINESS_TIMEOUT_SECONDS:-120}
+      DATABASE_URL: ${DATABASE_URL-postgres://catalog:${POSTGRES_PASSWORD:?Set local PostgreSQL password}@catalog-comparison-db:5432/catalog?sslmode=disable}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      catalog-comparison-db:
+        condition: service_healthy
+    ports:
+    - 127.0.0.1:${APP_PORT:-19680}:8080
+    profiles:
+    - app
+volumes:
+  rabbit-data: {}
+  keycloak-data: {}
+  crawler-data: {}
+  catalog-comparison-data: {}

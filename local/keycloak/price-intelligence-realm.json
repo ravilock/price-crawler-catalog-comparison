@@ -1,0 +1,190 @@
+{
+  "realm": "price-intelligence",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "id": "fcd8426d-c64b-42a6-9e31-dc06142119c1",
+        "name": "administrator"
+      },
+      {
+        "id": "8b1846e2-7825-4c57-9a10-202edcd88bb5",
+        "name": "manager"
+      },
+      {
+        "id": "5410225d-0fe2-4bce-a008-7008607f1728",
+        "name": "auditor"
+      },
+      {
+        "id": "10deffad-9b66-43d4-9b6e-fd6ed1fe8bfd",
+        "name": "end_user"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "price-intelligence-spa",
+      "name": "Price Intelligence SPA",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:19680/*",
+        "http://127.0.0.1:19680/*"
+      ],
+      "webOrigins": [
+        "http://localhost:19680",
+        "http://127.0.0.1:19680"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:19680/*##http://127.0.0.1:19680/*",
+        "oauth2.device.authorization.grant.enabled": "false"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone"
+      ],
+      "protocolMappers": [
+        {
+          "name": "default-organization-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "organization_id",
+            "claim.value": "00000000-0000-4000-8000-000000000001",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "price-intelligence-api",
+      "name": "Price Intelligence API resource server",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": true,
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": false,
+        "policyEnforcementMode": "ENFORCING",
+        "resources": [
+          {
+            "name": "price-intelligence-api",
+            "type": "urn:price-intelligence:api",
+            "uris": [
+              "/*"
+            ],
+            "scopes": [
+              {
+                "name": "read"
+              },
+              {
+                "name": "write"
+              },
+              {
+                "name": "admin"
+              }
+            ]
+          }
+        ],
+        "policies": [
+          {
+            "id": "34cbf6e6-7d28-4850-a6fd-242c70e82d01",
+            "name": "administrator-policy",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"fcd8426d-c64b-42a6-9e31-dc06142119c1\",\"required\":false}]"
+            }
+          },
+          {
+            "id": "7c42b3e8-e6a2-4442-a72b-f949a3dfe428",
+            "name": "manager-policy",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"8b1846e2-7825-4c57-9a10-202edcd88bb5\",\"required\":false}]"
+            }
+          },
+          {
+            "id": "3e30aa4a-57d6-4b42-8a5f-df67ac54d919",
+            "name": "auditor-policy",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"5410225d-0fe2-4bce-a008-7008607f1728\",\"required\":false}]"
+            }
+          },
+          {
+            "id": "4d20d407-a296-40b1-8dd4-1fef5f1b0fa1",
+            "name": "end-user-policy",
+            "type": "role",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "roles": "[{\"id\":\"10deffad-9b66-43d4-9b6e-fd6ed1fe8bfd\",\"required\":false}]"
+            }
+          },
+          {
+            "id": "d39895b9-a113-4c04-b4eb-2c6f794a2c21",
+            "name": "read-permission",
+            "type": "scope",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+              "resources": "[\"price-intelligence-api\"]",
+              "scopes": "[\"read\"]",
+              "applyPolicies": "[\"administrator-policy\",\"manager-policy\",\"auditor-policy\",\"end-user-policy\"]"
+            }
+          },
+          {
+            "id": "2dd67779-c904-475b-9c6e-cdaac23ea650",
+            "name": "write-permission",
+            "type": "scope",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+              "resources": "[\"price-intelligence-api\"]",
+              "scopes": "[\"write\"]",
+              "applyPolicies": "[\"administrator-policy\",\"manager-policy\",\"end-user-policy\"]"
+            }
+          },
+          {
+            "id": "3a604787-3335-488e-8eb1-0ff1ed7c9d57",
+            "name": "admin-permission",
+            "type": "scope",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+              "resources": "[\"price-intelligence-api\"]",
+              "scopes": "[\"admin\"]",
+              "applyPolicies": "[\"administrator-policy\"]"
+            }
+          }
+        ],
+        "decisionStrategy": "AFFIRMATIVE"
+      }
+    }
+  ]
+}

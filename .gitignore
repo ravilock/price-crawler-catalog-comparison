@@ -8,3 +8,12 @@ coverage/
 .env.*
 !.env.example
 *.log
+
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+__pycache__/
+*.pyc
