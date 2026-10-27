@@ -25,6 +25,7 @@ jobs:
       - run: make build
   publish:
     needs: verify
+    if: ${{ needs.verify.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
