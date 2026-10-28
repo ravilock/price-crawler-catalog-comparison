@@ -131,6 +131,8 @@ automatic rollback or forced version is permitted.
 
 ## Delivery status
 
+`/healthz` reports process liveness; `/readyz` requires an authenticated RabbitMQ connection, database SELECT 1, and a clean expected migration version. Startup waits up to `READINESS_TIMEOUT_SECONDS` (default 120); dependency failures degrade readiness and retry with exponential delays bounded by `RECONNECT_INITIAL_DELAY_SECONDS` (default 1) and `RECONNECT_MAX_DELAY_SECONDS` (default 30). The app-profile health check uses `/readyz`. Readiness does not establish business workflow or demo readiness.
+
 ## Owned migrations — T075
 
 The catalog image packages its versioned SQL and the pinned
