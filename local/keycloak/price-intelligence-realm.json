@@ -57,6 +57,17 @@
       ],
       "protocolMappers": [
         {
+          "name": "authenticated-user-subject",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
           "name": "default-organization-id",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-hardcoded-claim-mapper",
