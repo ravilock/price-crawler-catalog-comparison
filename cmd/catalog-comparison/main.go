@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"price-crawler/services/catalog-comparison/internal/config"
+	"price-crawler/services/catalog-comparison/internal/matching"
 	"price-crawler/services/catalog-comparison/internal/observability"
 
 	_ "github.com/lib/pq"
 )
 
-const expectedMigrationVersion = 2
+const expectedMigrationVersion = 5
 
 func verifyMigration(ctx context.Context, db *sql.DB) error {
 	var exists bool
@@ -73,6 +74,9 @@ func run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 		return fmt.Errorf("catalog-comparison database or migration readiness timeout: %v", database.LastError())
 	}
 
+	matchingDone := make(chan struct{})
+	go func() { defer close(matchingDone); matching.Run(monitorCtx, db, cfg.RabbitMQURL, logger) }()
+	defer func() { stopMonitors(); <-matchingDone }()
 	pool := observability.NewWorkerPool(cfg.WorkerConcurrency)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) {

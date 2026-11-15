@@ -2,10 +2,8 @@ package integration
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
+	"github.com/google/uuid"
 	"net/url"
 	"os"
 	"reflect"
@@ -95,14 +93,11 @@ func newMembershipTestClient(t *testing.T) *membershipTestClient {
 
 func newTestUUID(t *testing.T) string {
 	t.Helper()
-	var bytes [16]byte
-	if _, err := rand.Read(bytes[:]); err != nil {
+	value, err := uuid.NewRandom()
+	if err != nil {
 		t.Fatal(err)
 	}
-	bytes[6] = (bytes[6] & 0x0f) | 0x40
-	bytes[8] = (bytes[8] & 0x3f) | 0x80
-	encoded := hex.EncodeToString(bytes[:])
-	return fmt.Sprintf("%s-%s-%s-%s-%s", encoded[:8], encoded[8:12], encoded[12:16], encoded[16:20], encoded[20:])
+	return value.String()
 }
 
 func (client *membershipTestClient) request(messageType, queue, organization, idempotencyKey string, payload any) json.RawMessage {

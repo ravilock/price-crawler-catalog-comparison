@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    { "$ref": "message-envelope.v1.schema.json" },
+    {
+      "properties": {
+        "message_type": { "const": "product.information.found" },
+        "payload": {
+          "type": "object",
+          "required": ["crawl_request_id", "normalization_version", "fields", "attributes", "offer"],
+          "properties": {
+            "crawl_request_id": { "type": "string", "format": "uuid" },
+            "normalization_version": { "type": "string", "maxLength": 100 },
+            "fields": { "type": "object", "additionalProperties": { "$ref": "#/$defs/field_candidate" } },
+            "attributes": { "type": "array", "items": { "type": "object", "required": ["name", "value"], "properties": { "name": { "type": "string" }, "value": { "type": ["string", "number", "boolean"] }, "unit": { "type": ["string", "null"] }, "field": { "$ref": "#/$defs/field_candidate" } }, "additionalProperties": false } },
+            "offer": {
+              "type": "object",
+              "required": ["availability", "price_status"],
+              "properties": {
+                "price_cents": { "type": ["integer", "null"], "minimum": 0 },
+                "currency": { "const": "BRL" },
+                "payment_method": { "type": ["string", "null"], "maxLength": 100 },
+                "availability": { "enum": ["available", "unavailable", "unknown"] },
+                "price_status": { "enum": ["valid", "missing", "invalid", "uncertain"] },
+                "price_field": { "$ref": "#/$defs/field_candidate" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "field_candidate": {
+      "type": "object",
+      "required": ["status", "confidence"],
+      "properties": {
+        "raw_value": { "type": ["string", "number", "boolean", "null"] },
+        "normalized_value": { "type": ["string", "number", "boolean", "null"] },
+        "evidence_ref": { "type": ["string", "null"], "maxLength": 500 },
+        "status": { "enum": ["valid", "missing", "invalid", "uncertain"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason": { "type": ["string", "null"], "maxLength": 500 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

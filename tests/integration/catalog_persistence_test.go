@@ -64,7 +64,14 @@ func TestCatalogPersistenceTenantAndAuditConstraints(t *testing.T) {
 
 func TestCatalogMigrationPreservesExistingMessages(t *testing.T) {
 	db := openTestDB(t)
-	down, err := os.ReadFile("../../migrations/004_comparison_group_membership.down.sql")
+	down, err := os.ReadFile("../../migrations/005_candidate_resolution.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(string(down)); err != nil {
+		t.Fatal(err)
+	}
+	down, err = os.ReadFile("../../migrations/004_comparison_group_membership.down.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,6 +114,13 @@ func TestCatalogMigrationPreservesExistingMessages(t *testing.T) {
 		t.Fatal(err)
 	}
 	up, err = os.ReadFile("../../migrations/004_comparison_group_membership.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(string(up)); err != nil {
+		t.Fatal(err)
+	}
+	up, err = os.ReadFile("../../migrations/005_candidate_resolution.up.sql")
 	if err != nil {
 		t.Fatal(err)
 	}

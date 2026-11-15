@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    { "$ref": "message-envelope.v1.schema.json" },
+    {
+      "properties": {
+        "message_type": { "const": "collection.result" },
+        "payload": {
+          "type": "object",
+          "required": ["crawl_request_id", "offer_id", "outcome", "observed_at", "availability", "freshness_status"],
+          "properties": {
+            "crawl_request_id": { "type": "string", "format": "uuid" },
+            "offer_id": { "type": "string", "format": "uuid" },
+            "candidate_id": { "type": ["string", "null"], "format": "uuid" },
+            "outcome": { "enum": ["complete", "partial", "failed", "paused"] },
+            "price_cents": { "type": ["integer", "null"], "minimum": 0 },
+            "currency": { "const": "BRL" },
+            "availability": { "enum": ["available", "unavailable", "unknown"] },
+            "source_domain_id": { "type": "string", "format": "uuid" },
+            "observed_at": { "type": "string", "format": "date-time" },
+            "freshness_status": { "enum": ["current", "stale", "unknown"] },
+            "provenance_refs": { "type": "array", "items": { "type": "string", "maxLength": 500 }, "maxItems": 100 }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

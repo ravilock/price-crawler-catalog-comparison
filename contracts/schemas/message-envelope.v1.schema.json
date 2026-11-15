@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "message-envelope.v1.schema.json",
+  "title": "RabbitMQ Message Envelope v1",
+  "type": "object",
+  "required": ["message_id", "message_type", "schema_version", "occurred_at", "organization_id", "correlation_id", "payload"],
+  "properties": {
+    "message_id": { "type": "string", "format": "uuid" },
+    "message_type": { "type": "string" },
+    "schema_version": { "const": 1 },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "organization_id": { "type": "string", "format": "uuid" },
+    "correlation_id": { "type": "string", "format": "uuid" },
+    "causation_id": { "type": "string", "format": "uuid" },
+    "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": false
+}

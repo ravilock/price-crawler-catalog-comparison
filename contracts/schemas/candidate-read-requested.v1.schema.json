@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "candidate-read-requested.v1.schema.json",
+  "allOf": [
+    {
+      "$ref": "message-envelope.v1.schema.json"
+    },
+    {
+      "properties": {
+        "message_type": {
+          "const": "candidate.read.requested"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "offer_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "crawl_request_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "candidate_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "offer_id",
+            "crawl_request_id",
+            "candidate_id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}
