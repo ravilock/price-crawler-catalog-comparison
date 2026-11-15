@@ -182,8 +182,9 @@ func matchReady(ctx context.Context, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO match_suggestion(id,organization_id,offer_id,candidate_id,proposed_product_id)
-		VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`, suggestionID, organizationID, offerID, candidateID, proposedID)
+	title := validStringField(candidate.Fields, "title")
+	_, err = tx.ExecContext(ctx, `INSERT INTO match_suggestion(id,organization_id,offer_id,candidate_id,proposed_product_id,title)
+		VALUES($1,$2,$3,$4,$5,NULLIF(left($6,200),'')) ON CONFLICT DO NOTHING`, suggestionID, organizationID, offerID, candidateID, proposedID, title)
 	if err != nil {
 		return err
 	}
@@ -204,7 +205,7 @@ func loadProducts(ctx context.Context, q queryer, organizationID string) ([]cano
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var products []canonicalProduct
 	for rows.Next() {
 		var p canonicalProduct

@@ -1,0 +1,761 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "catalog-review-detail.v1.schema.json",
+  "title": "Catalog review and comparison detail v1",
+  "$defs": {
+    "actor": {
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "role": {
+          "enum": [
+            "administrator",
+            "manager",
+            "auditor",
+            "end_user"
+          ]
+        }
+      },
+      "required": [
+        "subject",
+        "role"
+      ],
+      "additionalProperties": false
+    },
+    "product": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "brand": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "gtin": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "name",
+        "brand",
+        "model",
+        "gtin"
+      ],
+      "additionalProperties": false
+    },
+    "suggestion": {
+      "type": "object",
+      "properties": {
+        "suggestion_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "offer_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "candidate_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "proposed_product_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "suggestion_id",
+        "offer_id",
+        "candidate_id",
+        "proposed_product_id",
+        "title",
+        "created_at"
+      ],
+      "additionalProperties": false
+    },
+    "offer": {
+      "type": "object",
+      "properties": {
+        "offer_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "product_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "price_cents": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "currency": {
+          "const": "BRL"
+        },
+        "availability": {
+          "enum": [
+            "available",
+            "unavailable",
+            "unknown"
+          ]
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "freshness": {
+          "enum": [
+            "current",
+            "stale",
+            "unknown"
+          ]
+        },
+        "collection_status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "paused",
+            "unknown"
+          ]
+        },
+        "classification": {
+          "enum": [
+            "ranked",
+            "stale",
+            "unavailable",
+            "unknown_availability",
+            "unverified",
+            "not_ready"
+          ]
+        }
+      },
+      "required": [
+        "offer_id",
+        "product_id",
+        "source_id",
+        "price_cents",
+        "currency",
+        "availability",
+        "observed_at",
+        "freshness",
+        "collection_status",
+        "classification"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "classification": {
+                "const": "ranked"
+              }
+            },
+            "required": [
+              "classification"
+            ]
+          },
+          "then": {
+            "properties": {
+              "price_cents": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "availability": {
+                "const": "available"
+              },
+              "freshness": {
+                "const": "current"
+              },
+              "observed_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "allOf": [
+        {
+          "$ref": "message-envelope.v1.schema.json"
+        },
+        {
+          "properties": {
+            "message_type": {
+              "const": "catalog.review.list.requested"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "actor": {
+                  "$ref": "#/$defs/actor"
+                },
+                "limit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                "cursor": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "actor",
+                "limit"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "message-envelope.v1.schema.json"
+        },
+        {
+          "properties": {
+            "message_type": {
+              "const": "catalog.review.list.result"
+            },
+            "payload": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "const": "ok"
+                    },
+                    "items": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "$ref": "#/$defs/suggestion"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "items",
+                    "next_cursor"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "pending",
+                        "not_found",
+                        "forbidden",
+                        "invalid",
+                        "conflict",
+                        "expired",
+                        "not_ready"
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "detail": {
+                          "type": "string",
+                          "maxLength": 500
+                        }
+                      },
+                      "required": [
+                        "code"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "message-envelope.v1.schema.json"
+        },
+        {
+          "properties": {
+            "message_type": {
+              "const": "catalog.review.decide.requested"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "actor": {
+                  "$ref": "#/$defs/actor"
+                },
+                "suggestion_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision": {
+                  "enum": [
+                    "approve",
+                    "reject"
+                  ]
+                },
+                "selection": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "select"
+                        },
+                        "product_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "product_id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "const": "create"
+                        },
+                        "product": {
+                          "$ref": "#/$defs/product"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "product"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "actor",
+                "suggestion_id",
+                "decision"
+              ],
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "decision": {
+                        "const": "approve"
+                      }
+                    },
+                    "required": [
+                      "decision"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "selection"
+                    ]
+                  },
+                  "else": {
+                    "not": {
+                      "required": [
+                        "selection"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "required": [
+            "idempotency_key"
+          ]
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "message-envelope.v1.schema.json"
+        },
+        {
+          "properties": {
+            "message_type": {
+              "const": "catalog.review.decide.result"
+            },
+            "payload": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "const": "ok"
+                    },
+                    "decision_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "suggestion_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "offer_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "decision": {
+                      "enum": [
+                        "approve",
+                        "reject"
+                      ]
+                    },
+                    "product_id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "reviewer": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "decided_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "decision_id",
+                    "suggestion_id",
+                    "offer_id",
+                    "decision",
+                    "product_id",
+                    "reviewer",
+                    "decided_at"
+                  ],
+                  "additionalProperties": false,
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "decision": {
+                            "const": "approve"
+                          }
+                        },
+                        "required": [
+                          "decision"
+                        ]
+                      },
+                      "then": {
+                        "properties": {
+                          "product_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "product_id": {
+                            "type": "null"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "pending",
+                        "not_found",
+                        "forbidden",
+                        "invalid",
+                        "conflict",
+                        "expired",
+                        "not_ready"
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "detail": {
+                          "type": "string",
+                          "maxLength": 500
+                        }
+                      },
+                      "required": [
+                        "code"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "message-envelope.v1.schema.json"
+        },
+        {
+          "properties": {
+            "message_type": {
+              "const": "comparison.group.detail.requested"
+            },
+            "payload": {
+              "type": "object",
+              "properties": {
+                "actor": {
+                  "$ref": "#/$defs/actor"
+                },
+                "group_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "limit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                "cursor": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "actor",
+                "group_id",
+                "limit"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "allOf": [
+        {
+          "$ref": "message-envelope.v1.schema.json"
+        },
+        {
+          "properties": {
+            "message_type": {
+              "const": "comparison.group.detail.result"
+            },
+            "payload": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "const": "ok"
+                    },
+                    "group_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "state": {
+                      "enum": [
+                        "draft",
+                        "validated"
+                      ]
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "as_of": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "items": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "$ref": "#/$defs/offer"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "group_id",
+                    "name",
+                    "state",
+                    "revision",
+                    "as_of",
+                    "items",
+                    "next_cursor"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "pending",
+                        "not_found",
+                        "forbidden",
+                        "invalid",
+                        "conflict",
+                        "expired",
+                        "not_ready"
+                      ]
+                    },
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "detail": {
+                          "type": "string",
+                          "maxLength": 500
+                        }
+                      },
+                      "required": [
+                        "code"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
