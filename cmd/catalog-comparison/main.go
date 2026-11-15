@@ -17,7 +17,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const expectedMigrationVersion = 5
+const expectedMigrationVersion = 6
 
 func verifyMigration(ctx context.Context, db *sql.DB) error {
 	var exists bool

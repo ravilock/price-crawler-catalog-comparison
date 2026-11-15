@@ -253,6 +253,14 @@ func Run(ctx context.Context, db *sql.DB, url string, logger *slog.Logger) {
 					logger.Warn("resolve candidate job", "error", err)
 				}
 			}
+			for i := 0; i < 10; i++ {
+				if err := matchReady(ctx, db); err != nil {
+					if !errors.Is(err, sql.ErrNoRows) {
+						logger.Warn("match resolved candidate", "error", err)
+					}
+					break
+				}
+			}
 		}
 	}
 }
