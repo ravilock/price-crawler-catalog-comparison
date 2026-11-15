@@ -64,7 +64,14 @@ func TestCatalogPersistenceTenantAndAuditConstraints(t *testing.T) {
 
 func TestCatalogMigrationPreservesExistingMessages(t *testing.T) {
 	db := openTestDB(t)
-	down, err := os.ReadFile("../../migrations/002_catalog_identity.down.sql")
+	down, err := os.ReadFile("../../migrations/003_pending_match_jobs.down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(string(down)); err != nil {
+		t.Fatal(err)
+	}
+	down, err = os.ReadFile("../../migrations/002_catalog_identity.down.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,6 +86,13 @@ func TestCatalogMigrationPreservesExistingMessages(t *testing.T) {
 		t.Fatal(err)
 	}
 	up, err := os.ReadFile("../../migrations/002_catalog_identity.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec(string(up)); err != nil {
+		t.Fatal(err)
+	}
+	up, err = os.ReadFile("../../migrations/003_pending_match_jobs.up.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
