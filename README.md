@@ -138,6 +138,13 @@ automatic rollback or forced version is permitted.
 
 ## Owned migrations — T075
 
+Migration 002 adds tenant-scoped catalog identity, review decisions, audit records,
+offer associations and the base comparison group while retaining the existing inbox
+and outbox. The application requires clean migration version 2. Group membership,
+group revisions and pending match jobs are delivered in later migrations. Its down
+migration removes catalog data and review history and is an explicitly destructive
+operator action; back up data before a rollback.
+
 The catalog image packages its versioned SQL and the pinned
 `migrate/migrate:v4.18.3` PostgreSQL CLI. `make migrate.up` applies pending schema changes;
 `make migrate.version` reports the version. The app profile waits for the health-gated,

@@ -16,6 +16,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const expectedMigrationVersion = 2
+
 func verifyMigration(ctx context.Context, db *sql.DB) error {
 	var exists bool
 	if err := db.QueryRowContext(ctx, `SELECT to_regclass('public.schema_migrations') IS NOT NULL`).Scan(&exists); err != nil {
@@ -29,7 +31,7 @@ func verifyMigration(ctx context.Context, db *sql.DB) error {
 	if err := db.QueryRowContext(ctx, `SELECT count(*), COALESCE(max(version),0), COALESCE(bool_or(dirty),false) FROM public.schema_migrations`).Scan(&count, &version, &dirty); err != nil {
 		return errors.New("cannot read catalog-comparison migration state")
 	}
-	if count != 1 || dirty || version != 1 {
+	if count != 1 || dirty || version != expectedMigrationVersion {
 		return fmt.Errorf("catalog-comparison migration state is not clean (version=%d, dirty=%t, records=%d)", version, dirty, count)
 	}
 	return nil
