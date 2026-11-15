@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"price-crawler/services/catalog-comparison/internal/comparison"
 	"price-crawler/services/catalog-comparison/internal/config"
 	"price-crawler/services/catalog-comparison/internal/matching"
 	"price-crawler/services/catalog-comparison/internal/observability"
@@ -18,7 +19,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const expectedMigrationVersion = 7
+const expectedMigrationVersion = 8
 
 func verifyMigration(ctx context.Context, db *sql.DB) error {
 	var exists bool
@@ -79,7 +80,12 @@ func run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
 	go func() { defer close(matchingDone); matching.Run(monitorCtx, db, cfg.RabbitMQURL, logger) }()
 	reviewDone := make(chan struct{})
 	go func() { defer close(reviewDone); review.Run(monitorCtx, db, cfg.RabbitMQURL, logger) }()
-	defer func() { stopMonitors(); <-matchingDone; <-reviewDone }()
+	rankingDone := make(chan struct{})
+	go func() {
+		defer close(rankingDone)
+		comparison.Run(monitorCtx, db, cfg.RabbitMQURL, logger, cfg.RankingRevalidate)
+	}()
+	defer func() { stopMonitors(); <-matchingDone; <-reviewDone; <-rankingDone }()
 	pool := observability.NewWorkerPool(cfg.WorkerConcurrency)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) {

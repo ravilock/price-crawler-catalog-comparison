@@ -12,6 +12,7 @@ type Config struct {
 	HTTPAddr, DatabaseURL, RabbitMQURL, OIDCIssuer   string
 	WorkerConcurrency                                int
 	ReadinessTimeout, ReconnectInitial, ReconnectMax time.Duration
+	RankingRevalidate                                time.Duration
 }
 
 func Load() (Config, error) {
@@ -27,6 +28,13 @@ func Load() (Config, error) {
 	}
 	if c.ReconnectInitial > c.ReconnectMax {
 		return Config{}, errors.New("initial reconnect delay must not exceed maximum")
+	}
+	if raw := os.Getenv("RANKING_REVALIDATE_SECONDS"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 || n > 86400 {
+			return Config{}, errors.New("RANKING_REVALIDATE_SECONDS must be between 1 and 86400")
+		}
+		c.RankingRevalidate = time.Duration(n) * time.Second
 	}
 	if raw := os.Getenv("WORKER_CONCURRENCY"); raw != "" {
 		n, err := strconv.Atoi(raw)

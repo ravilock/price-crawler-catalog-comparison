@@ -132,6 +132,26 @@ stop the owner, inspect its version/error and actual schema, back up data, and r
 restore the schema before an operator explicitly corrects the version and retries; no
 automatic rollback or forced version is permitted.
 
+## Ranking projection recovery
+
+Migration 008 adds the replaceable `offer_ranking_projection` read model and the durable
+`ranking_refresh_job` queue. `collection.result.v1` remains unchanged and only schedules a
+read; the catalog obtains authoritative facts through the crawler-owned
+`ranking.facts.read.requested.v1` request/reply boundary. Offer and source revisions merge
+independently: strictly newer components apply, older ones are ignored and an equal
+revision with different content is an inconsistency that keeps the projection not ready
+for ranking. A failed collection preserves the preceding observation and verified price.
+
+On startup every stored projection is marked not ready and scheduled for revalidation,
+because a restarted consumer cannot prove stored facts are current. A bounded sweep
+re-arms projections not read within `RANKING_REVALIDATE_SECONDS` (default 900), and the
+durable `source.policy.changed.v1` consumer invalidates affected projections without
+overwriting a newer source component. Reads use bounded retries; transport failures and
+`pending`/`not_ready` replies retry with exponential delay, while `not_found`, `forbidden`
+and `invalid` stop until new work arrives. Readers must gate ranking on
+`Projection.RankableAt` so an old freshness window is never presented as current. The
+catalog never reads crawler tables.
+
 ## Delivery status
 
 `/healthz` reports process liveness; `/readyz` requires an authenticated RabbitMQ connection, database SELECT 1, and a clean expected migration version. Startup waits up to `READINESS_TIMEOUT_SECONDS` (default 120); dependency failures degrade readiness and retry with exponential delays bounded by `RECONNECT_INITIAL_DELAY_SECONDS` (default 1) and `RECONNECT_MAX_DELAY_SECONDS` (default 30). The app-profile health check uses `/readyz`. Readiness does not establish business workflow or demo readiness.

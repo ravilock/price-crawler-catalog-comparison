@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ranking-facts-read-requested.v1.schema.json",
+  "allOf": [
+    {
+      "$ref": "message-envelope.v1.schema.json"
+    },
+    {
+      "properties": {
+        "message_type": {
+          "const": "ranking.facts.read.requested"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "offer_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "offer_id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

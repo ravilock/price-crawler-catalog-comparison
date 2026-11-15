@@ -1,0 +1,5 @@
+DROP INDEX ranking_refresh_job_due_idx;
+DROP TABLE ranking_refresh_job;
+DROP INDEX offer_ranking_projection_validation_idx;
+DROP INDEX offer_ranking_projection_source_idx;
+DROP TABLE offer_ranking_projection;

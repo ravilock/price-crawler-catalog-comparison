@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ranking-facts-read-result.v1.schema.json",
+  "allOf": [
+    {
+      "$ref": "message-envelope.v1.schema.json"
+    },
+    {
+      "properties": {
+        "message_type": {
+          "const": "ranking.facts.read.result"
+        },
+        "payload": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "const": "ok"
+                },
+                "offer_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "source_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "offer_revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "source_revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "freshness_window_seconds": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "latest_collection": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "crawl_request_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "outcome": {
+                          "enum": [
+                            "complete",
+                            "partial",
+                            "failed",
+                            "paused"
+                          ]
+                        },
+                        "completed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "crawl_request_id",
+                        "outcome",
+                        "completed_at"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "latest_observation": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "observation_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "position": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "crawl_request_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "availability": {
+                          "enum": [
+                            "available",
+                            "unavailable",
+                            "unknown"
+                          ]
+                        },
+                        "observed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "observation_id",
+                        "position",
+                        "crawl_request_id",
+                        "availability",
+                        "observed_at"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "last_verified_cash_price": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "observation_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "position": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "crawl_request_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "price_cents": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "currency": {
+                          "const": "BRL"
+                        },
+                        "observed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "observation_id",
+                        "position",
+                        "crawl_request_id",
+                        "price_cents",
+                        "currency",
+                        "observed_at"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "status",
+                "offer_id",
+                "source_id",
+                "offer_revision",
+                "source_revision",
+                "freshness_window_seconds",
+                "latest_collection",
+                "latest_observation",
+                "last_verified_cash_price"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "enum": [
+                    "pending",
+                    "not_found",
+                    "forbidden",
+                    "not_ready",
+                    "invalid"
+                  ]
+                },
+                "offer_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "status",
+                "offer_id"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

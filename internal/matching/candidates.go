@@ -13,6 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 
+	"price-crawler/services/catalog-comparison/internal/comparison"
 	"price-crawler/services/catalog-comparison/internal/messaging"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -103,6 +104,11 @@ func RecordCollection(ctx context.Context, db *sql.DB, e messaging.Envelope) err
 		if err != nil {
 			return err
 		}
+	}
+	// collection.result.v1 does not carry ranking facts; schedule the
+	// authoritative ranking read in the same transaction as the inbox.
+	if err = comparison.EnqueueRefresh(ctx, tx, e.Organization, p.OfferID); err != nil {
+		return err
 	}
 	return tx.Commit()
 }

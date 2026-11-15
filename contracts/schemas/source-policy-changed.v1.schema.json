@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "source-policy-changed.v1.schema.json",
+  "allOf": [
+    {
+      "$ref": "message-envelope.v1.schema.json"
+    },
+    {
+      "properties": {
+        "message_type": {
+          "const": "source.policy.changed"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "source_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_revision": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "freshness_window_seconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "active": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "source_id",
+            "source_revision",
+            "freshness_window_seconds",
+            "active"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}
