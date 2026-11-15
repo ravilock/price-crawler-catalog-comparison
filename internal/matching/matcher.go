@@ -194,6 +194,10 @@ func matchReady(ctx context.Context, db *sql.DB) error {
 	return tx.Commit()
 }
 
+// ProcessReady applies one durable resolved candidate job. It is also the
+// deterministic service boundary used by integration scenarios.
+func ProcessReady(ctx context.Context, db *sql.DB) error { return matchReady(ctx, db) }
+
 type queryer interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 	ExecContext(context.Context, string, ...any) (sql.Result, error)
